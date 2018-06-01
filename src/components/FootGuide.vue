@@ -1,10 +1,10 @@
 <template>
   <footer id="foot_guide">
-    <section @click="to('/feed/new')" class="guide_item" :class="{active: isCurPath('/feed')}">
+    <section @click="to('/feeds?type=hot')" class="guide_item" :class="{active: isCurPath('/feed')}">
       <svg class="m-style-svg m-svg-def foot_guide_icon">
         <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#foot-home"></use>
       </svg>
-      <span>首页</span>
+      <span>动态</span>
     </section>
     <section @click="to('/discover')" class="guide_item" :class="{active: isCurPath('/discover')}">
       <svg class="m-style-svg m-svg-def foot_guide_icon">
@@ -17,8 +17,8 @@
         <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#foot-plus"></use>
       </svg>
     </section>
-    <section @click="to('/message/msg')" class="guide_item" :class="{active: isCurPath('/message')}">
-      <v-badge :dot='has_msg'>
+    <section @click="to('/message/info')" class="guide_item" :class="{active: isCurPath('/message')}">
+      <v-badge :dot='hasMsg'>
         <svg class="m-style-svg m-svg-def foot_guide_icon">
           <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#foot-message"></use>
         </svg>
@@ -26,7 +26,7 @@
       <span>消息</span>
     </section>
     <section @click="to('/profile')" class="guide_item" :class="{active: isCurPath('profile')}">
-      <v-badge :dot='has_fans'>
+      <v-badge :dot='profile'>
         <svg class="m-style-svg m-svg-def foot_guide_icon">
           <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#foot-profile"></use>
         </svg>
@@ -36,7 +36,7 @@
   </footer>
 </template>
 <script>
-import { mapState } from "vuex";
+import { mapState, mapGetters } from "vuex";
 import bus from "@/bus.js";
 export default {
   name: "FootGuide",
@@ -48,15 +48,24 @@ export default {
   computed: {
     ...mapState({
       has_msg: state =>
-        state.MESSAGE.UNREAD_COUNT.msg.diggs.count +
-          state.MESSAGE.UNREAD_COUNT.msg.comments.count +
-          state.MESSAGE.UNREAD_COUNT.msg.audits.feedCommentCount +
-          state.MESSAGE.UNREAD_COUNT.msg.audits.groupJoinCount +
-          state.MESSAGE.UNREAD_COUNT.msg.audits.groupPostCommentCount +
-          state.MESSAGE.UNREAD_COUNT.msg.audits.groupPostCount +
-          state.MESSAGE.UNREAD_COUNT.msg.audits.newsCommentCount >
+        state.MESSAGE.NEW_UNREAD_COUNT.commented +
+          state.MESSAGE.NEW_UNREAD_COUNT["feed-comment-pinned"] +
+          state.MESSAGE.NEW_UNREAD_COUNT["group-join-pinned"] +
+          state.MESSAGE.NEW_UNREAD_COUNT.liked +
+          state.MESSAGE.NEW_UNREAD_COUNT["news-comment-pinned"] +
+          state.MESSAGE.NEW_UNREAD_COUNT["post-comment-pinned"] +
+          state.MESSAGE.NEW_UNREAD_COUNT["post-pinned"] +
+          state.MESSAGE.NEW_UNREAD_COUNT.system >
+        0,
+      profile: state =>
+        state.MESSAGE.NEW_UNREAD_COUNT.following +
+          state.MESSAGE.NEW_UNREAD_COUNT.mutual >
         0
-    })
+    }),
+    ...mapGetters(["hasUnreadChat"]),
+    hasMsg() {
+      return this.has_msg || this.hasUnreadChat > 0;
+    }
   },
   methods: {
     to(path) {

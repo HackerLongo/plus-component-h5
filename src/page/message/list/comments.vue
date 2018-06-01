@@ -1,14 +1,22 @@
 <template>
   <div :class="`${prefixCls}`">
-    <head-top :go-back='true' title='评论的'></head-top>
-    <div></div>
-    <div :class="`${prefixCls}-container`">
+    <header slot="head" class="m-box m-justify-bet m-aln-center m-head-top m-pos-f m-main m-bb1">
+        <div class="m-box m-flex-grow1 m-aln-center m-flex-base0">
+            <svg class='m-style-svg m-svg-def' @click='goBack'>
+                <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#base-back"></use>
+            </svg>
+        </div>
+        <div class="m-box-model m-flex-grow1 m-aln-center m-flex-base0 m-head-top-title">
+            <span>收到的评论</span>
+        </div>
+        <div class="m-box m-flex-grow1 m-aln-center m-flex-base0 m-justify-end"></div>
+    </header>
+    <div :class="`${prefixCls}-container`" style="padding-top: 0.9rem">
       <load-more
         :onRefresh='onRefresh'
         :onLoadMore='onLoadMore'
         ref='loadmore'
-        :class="`${prefixCls}-loadmore`"
-      >
+        :class="`${prefixCls}-loadmore`">
         <div :class="`${prefixCls}-item`" v-for="comment in comments" :key="`comment-key-${comment.id}`"><component :is="items[comment.commentable_type]" :comment="comment"></component></div>
       </load-more>
     </div>
@@ -19,6 +27,7 @@
  * 消息-评论列表
  */
 import { mapState } from "vuex";
+import { resetUserCount } from "@/api/message.js";
 import feedItem from "../children/comments/feedItem";
 import newsItem from "../children/comments/newsItem";
 import productItem from "../children/comments/productItem";
@@ -80,7 +89,6 @@ export default {
   methods: {
     // 刷新服务
     onRefresh() {
-      console.log(1);
       this.refreshData = [];
       this.$http
         .get("/user/comments", {
@@ -90,7 +98,9 @@ export default {
           if (data.length > 0) {
             this.refreshData = data;
           }
-          this.$nextTick(this.$refs.loadmore.topEnd);
+          this.$nextTick(() => {
+            this.$refs.loadmore.topEnd(!(data.length < 15));
+          });
         });
     },
 
@@ -108,16 +118,14 @@ export default {
             type: "more",
             data
           });
-          this.$nextTick(this.$refs.loadmore.bottomEnd(data.length < 15));
+          this.$nextTick(() => {
+            this.$refs.loadmore.bottomEnd(data.length < 15);
+          });
         });
     }
   },
-  activated() {
-    this.$refs.loadmore.noMore = false;
-  },
   created() {
-    // 获取第一次消息
-    // this.onRefresh();
+    resetUserCount("commented");
   }
 };
 </script>

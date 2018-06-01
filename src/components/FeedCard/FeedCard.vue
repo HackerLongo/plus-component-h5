@@ -1,5 +1,5 @@
 <template>
-  <div class="m-box-model m-card">
+  <div class="m-box-model m-card" @click="handleView('')">
     <div class="m-box">
       <div 
       v-if="timeLine" 
@@ -15,40 +15,48 @@
             <span>{{ time | time2tips }}</span>
           </div>
         </header>
-        <article class="m-text-box m-card-body" @click="handelView">
-          <div class="m-text-box m-card-con m-text-cut-4" v-if="body.length > 0">
-            <span class="m-text-cut-4" v-html="replaceURI(body)"></span>
-            <span class="m-text-shadow" v-if="needPay"> 付费节点，购买后方可查看原文详情</span>
+        <article class="m-card-body" @click="handleView('')">
+          <h2 v-if="title">{{ title }}</h2>
+          <div class="m-card-con" v-if="body.length > 0">
+            <p
+            class="m-text-box m-text-cut-3"
+            :class="{needPay}"
+            v-html="replaceURI(body)"></p>
           </div>
           <feed-image
             v-if="images.length > 0"
             :id="feedID"
             :pics="images" />
+          <feed-video
+            v-if="video"
+            :id="feedID"
+            :video="video"
+          />
        </article>
      </section>
    </div>
-   <footer class="m-box-model m-card-foot m-bt1">
+   <footer v-if="showFooter" class="m-box-model m-card-foot m-bt1" @click.stop>
      <div class="m-box m-aln-center m-card-tools m-lim-width">
-      <a class="m-box m-aln-center" @click.prevent="handelLike">
+      <a class="m-box m-aln-center" @click.prevent="handleLike">
         <svg class='m-style-svg m-svg-def'>
           <use :xlink:href="liked ? '#feed-like' :'#feed-unlike'"></use>
         </svg>
         <span>{{ likeCount | formatNum }}</span>
       </a>
-      <a class="m-box m-aln-center"  @click.prevent="handelComment">
+      <a class="m-box m-aln-center"  @click.prevent="handleComment">
         <svg class='m-style-svg m-svg-def'>
           <use xlink:href="#feed-comment"></use>
         </svg>
         <span>{{ commentCount | formatNum }}</span>
       </a>
-      <a class="m-box m-aln-center" @click.prevent="handelView">
+      <a class="m-box m-aln-center" @click.prevent="handleView('')">
         <svg class='m-style-svg m-svg-def'>
           <use xlink:href="#feed-eye"></use>
         </svg>
         <span>{{ viewCount | formatNum }}</span>
       </a>
       <div class="m-box m-justify-end m-flex-grow1 m-flex-shrink1">
-        <a class="m-box m-aln-center" @click.prevent="handelMore">
+        <a class="m-box m-aln-center" @click.prevent="handleMore">
           <svg class='m-style-svg m-svg-def'>
             <use xlink:href="#feed-more"></use>
           </svg>
@@ -63,9 +71,9 @@
         <comment-item :comment="com" @on-click="commentAction"/>
       </li>
     </ul>
-    <router-link tag="div" class="m-router-link" v-if="commentCount > 5" :to="`/feed/${feedID}/#comment_list`">
-      <a>查看全部评论>></a>
-    </router-link>
+    <div class="m-router-link" v-if="commentCount > 5" @click="handleView('comment_list')">
+      <a>查看全部评论</a>
+    </div>
    </footer>
   </div>
 </template>
@@ -73,13 +81,15 @@
 import bus from "@/bus.js";
 import { mapState } from "vuex";
 import { time2txt } from "@/filters.js";
-import FeedImage from "@/components/FeedCard/FeedImage.vue";
-import CommentItem from "@/components/FeedCard/CommentItem.vue";
+import FeedImage from "./FeedImage.vue";
+import FeedVideo from "./FeedVideo.vue";
+import CommentItem from "./CommentItem.vue";
 export default {
   name: "feed-card",
   components: {
     FeedImage,
-    CommentItem
+    CommentItem,
+    FeedVideo
   },
   props: {
     timeLine: {
@@ -92,6 +102,10 @@ export default {
     },
     feed: {
       required: true
+    },
+    showFooter: {
+      type: Boolean,
+      default: true
     }
   },
   computed: {
@@ -146,6 +160,9 @@ export default {
     images() {
       return this.feed.images || [];
     },
+    video() {
+      return this.feed.video || false;
+    },
     body() {
       return this.feed.feed_content || "";
     },
@@ -166,6 +183,9 @@ export default {
             2
           )}</span>`
         : `<span>${text}</span>`;
+    },
+    title() {
+      return this.feed.title || "";
     }
   },
   methods: {
@@ -179,21 +199,33 @@ export default {
           )
         : "";
     },
-    handelView() {
+    handleView(hash) {
+      const path = hash
+        ? `/feeds/${this.feedID}#${hash}`
+        : `/feeds/${this.feedID}`;
       const { paid_node } = this.feed;
       paid_node && !paid_node.paid
-        ? bus.$emit("payfor", {
-            onCancel: () => {},
-            onSuccess: data => {
-              this.$Message.success(data);
-              this.$router.push(`/feed/${this.feedID}`);
-            },
-            node: paid_node.node,
-            amount: paid_node.amount
-          })
-        : this.$router.push(`/feed/${this.feedID}`);
+        ? this.$lstore.hasData("H5_ACCESS_TOKEN")
+          ? bus.$emit("payfor", {
+              onCancel: () => {},
+              onSuccess: data => {
+                this.$Message.success(data);
+                this.$router.push(path);
+              },
+              nodeType: "内容",
+              node: paid_node.node,
+              amount: paid_node.amount
+            })
+          : this.$nextTick(() => {
+              const path = this.$route.fullPath;
+              this.$router.push({
+                path: "/signin",
+                query: { redirect: path }
+              });
+            })
+        : this.$router.push(path);
     },
-    handelLike() {
+    handleLike() {
       const method = this.liked ? "delete" : "post";
       const url = this.liked
         ? `/feeds/${this.feedID}/unlike`
@@ -215,7 +247,7 @@ export default {
           this.fetching = false;
         });
     },
-    handelComment({ placeholder, reply_user }) {
+    handleComment({ placeholder, reply_user }) {
       bus.$emit("commentInput", {
         placeholder,
         onOk: text => {
@@ -223,7 +255,7 @@ export default {
         }
       });
     },
-    handelMore() {
+    handleMore() {
       const base = [
         {
           text: this.has_collect ? "取消收藏" : "收藏",
@@ -237,7 +269,7 @@ export default {
               ? ((txt = "取消收藏"),
                 (method = "delete"),
                 (url = `/feeds/${this.feedID}/uncollect`))
-              : ((txt = "已加入我的收藏"),
+              : ((txt = "收藏成功"),
                 (method = "post"),
                 (url = `/feeds/${this.feedID}/collections`));
             this.$http({
@@ -319,7 +351,7 @@ export default {
               }
             }
           ])
-        : this.handelComment({
+        : this.handleComment({
             placeholder,
             reply_user
           });
@@ -333,7 +365,9 @@ export default {
           .post(`/feeds/${this.feedID}/comments`, params, {
             validataStatus: s => s === 201
           })
-          .then(() => {
+          .then(({ data = { comment: {} } }) => {
+            this.feed.feed_comment_count += 1;
+            this.feed.comments.unshift(data.comment);
             this.$Message.success("评论成功");
             bus.$emit("commentInput:close", true);
           })
@@ -348,11 +382,6 @@ export default {
   },
   mounted() {
     this.user && this.$store.commit("SAVE_USER", this.user);
-    // this.$el.querySelectorAll(".m-art-links").forEach(node => {
-    //   node.addEventListener("click", e => {
-    //     e.stopPropagation();
-    //   });
-    // });
   }
 };
 </script>
@@ -398,12 +427,21 @@ export default {
     color: @text-color2;
     display: -webkit-box;
     margin-bottom: 20px;
-    .m-text-shadow {
-      text-shadow: 0 0 10px @text-color2;
+    .needPay:after {
+      content: " 付费节点，购买后方可查看原文详情 付费节点，购买后方可查看原文详情 付费节点，购买后方可查看原文详情";
+      text-shadow: 0 0 10px @text-color2; /* no */
       color: rgba(255, 255, 255, 0);
+      margin-left: 5px;
       // filter: DXImageTransform.Microsoft.Blur(pixelradius=2);
       zoom: 1;
       pause-before: 3s;
+    }
+  }
+  &-body {
+    > h2 {
+      font-size: 32px;
+      font-weight: bold;
+      margin-bottom: 20px;
     }
   }
   &-foot {
@@ -446,7 +484,7 @@ export default {
   a {
     color: inherit;
   }
-  font-size: 24px;
+  font-size: 26px;
   color: @text-color1;
   margin-top: -15px;
   margin-bottom: 30px;

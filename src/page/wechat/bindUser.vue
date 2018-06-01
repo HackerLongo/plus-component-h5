@@ -34,7 +34,7 @@
       </div>
       <button class="signup-form--submit-btn" :disabled='disabled' @click='bindUser'>
         <span>绑定</span>
-        <svg v-if='loading' class="rotate">
+        <svg v-if='loading'>
           <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#base-loading"></use>
         </svg>
       </button>
@@ -43,7 +43,6 @@
 </template>
 
 <script>
-import lstore from "store";
 function strLength(str) {
   let totalLength = 0;
   let i = 0;
@@ -124,11 +123,12 @@ export default {
         .then(({ data: { token = "", user = {} } = {} }) => {
           this.$store.commit("SAVE_CURRENTUSER", { ...user, token });
           this.$nextTick(() => {
-            this.$router.push(this.$route.query.redirect || "/feed/new");
+            this.$router.push(this.$route.query.redirect || "/feeds?type=hot");
             this.$store.dispatch("GET_UNREAD_COUNT");
+            this.$store.dispatch("GET_NEW_UNREAD_COUNT");
             this.$store.commit("SAVE_USER", user);
-            lstore.remove("H5_WECHAT_MP_OPENID");
-            lstore.remove("H5_WECHAT_MP_ASTOKEN");
+            this.$lstore.removeData("H5_WECHAT_MP_OPENID");
+            this.$lstore.removeData("H5_WECHAT_MP_ASTOKEN");
           });
         })
         .catch(() => {

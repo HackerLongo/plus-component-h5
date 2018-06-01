@@ -2,11 +2,27 @@
   <article-card
   :liked="liked"
   :loading="loading"
+  :canOprate="news.audit_status===0"
   @on-like="likeNews"
   @on-share="shareNews"
   @on-more="moreAction"
   @on-comment="commentNews"
   >
+    <header slot="head" class="m-box m-justify-bet m-aln-center m-art-head" style="padding: 0">
+      <div class="m-box m-flex-grow1 m-aln-center m-flex-base0">
+        <svg class='m-style-svg m-svg-def' @click='goBack'>
+          <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#base-back"></use>
+        </svg>
+      </div>
+      <div class="m-box m-flex-grow1 m-aln-center m-flex-base0 m-head-top-title m-text-cut">
+        资讯详情
+      </div>
+      <div class="m-box m-flex-grow1 m-aln-center m-flex-base0 m-justify-end">
+        <!-- <svg v-if="!isWechat" class='m-style-svg m-svg-def'>
+          <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#base-share"></use>
+        </svg> -->
+      </div>
+    </header>
     <div class="m-flex-shrink1 m-flex-grow1 m-art m-main">
       <section class="m-art-head">
          <h1>{{ news.title }}</h1>
@@ -19,7 +35,7 @@
       <div class="m-art-body" v-html='body'></div>
       <div class="m-box m-aln-center m-justify-bet m-art-foot">
         <div class="m-flex-grow1 m-flex-shrink1 m-box m-aln-center m-art-like-list">
-          <template v-if='likeCount > 0'>
+          <template v-if='likeCount > 0 && audit_status===0'>
             <ul class="m-box m-flex-grow0 m-flex-shrink0">
               <li 
               :key="id"
@@ -48,17 +64,19 @@
         <li>{{ commentCount | formatNum }}条评论</li>
       </ul>
       <comment-item 
+        v-if="news.audit_status===0"
         v-for="(comment) in pinnedCom"
         :pinned="true"
-        :key="comment.id"
+        :key="`pinned-${comment.id}`"
         :comment="comment"/>
       <comment-item
+        v-if="news.audit_status===0"
         @click="replyComment"
         v-for="(comment) in comments"
-        :key="comment.id"
+        :key="`comment-${comment.id}`"
         :comment="comment"/>
 
-        <div class="m-box m-aln-center m-justify-center load-more-box">
+        <div v-if="news.audit_status===0" class="m-box m-aln-center m-justify-center load-more-box">
           <span v-if="noMoreCom" class="load-more-ph">---没有更多---</span>
           <span v-else class="load-more-btn" @click.stop="fetchNewsComments(maxComId)">
             {{fetchComing ? "加载中..." : "点击加载更多"}}
@@ -71,6 +89,7 @@
 <script>
 import bus from "@/bus.js";
 import md from "@/util/markdown.js";
+import wechatShare from "@/util/wechatShare.js";
 import ArticleCard from "@/page/article/ArticleCard.vue";
 import CommentItem from "@/page/article/ArticleComment.vue";
 export default {
@@ -92,10 +111,36 @@ export default {
 
       fetchComing: false,
       noMoreCom: false,
-      maxComId: 0
+      maxComId: 0,
+      config: {
+        appid: "",
+        signature: "",
+        timestamp: "",
+        noncestr: ""
+      },
+      appList: [
+        "onMenuShareQZone",
+        "onMenuShareQQ",
+        "onMenuShareAppMessage",
+        "onMenuShareTimeline"
+      ],
+      share: {
+        title: "",
+        desc: "",
+        link: ""
+      }
     };
   },
   computed: {
+    firstImage() {
+      let images = this.news.image;
+      if (!Object.keys(images).length) {
+        return "";
+      }
+      return (
+        this.$http.defaults.baseURL + "/files/" + images.id + "?w=300&h=300"
+      );
+    },
     newsID() {
       return this.$route.params.newsID;
     },
@@ -138,9 +183,18 @@ export default {
     },
     body() {
       return md(this.news.content || "");
+    },
+    isWechat() {
+      return this.$store.state.BROWSER.isWechat;
     }
   },
   methods: {
+    shareSuccess() {
+      this.$Message.success("分享成功");
+    },
+    shareCancel() {
+      this.$Message.success("取消分享");
+    },
     fetchNews() {
       if (this.fetching) return;
       this.fetching = true;
@@ -149,12 +203,30 @@ export default {
         .then(({ data = {} }) => {
           this.news = data;
           this.oldID = this.newsID;
+          this.share.title = data.title;
+          this.share.desc = data.subject;
           setTimeout(() => {
             this.loading = false;
             this.fetching = false;
             this.fetchNewsComments();
             this.fetchNewsLikes();
           }, 800);
+          if (this.isWechat) {
+            const shareUrl =
+              window.location.origin +
+              process.env.BASE_URL.substr(0, process.env.BASE_URL.length - 1) +
+              this.$route.fullPath;
+            const signUrl =
+              this.$store.state.BROWSER.OS === "IOS"
+                ? window.initUrl
+                : shareUrl;
+            wechatShare(signUrl, {
+              title: data.title,
+              desc: data.subject,
+              link: shareUrl,
+              imgUrl: this.firstImage
+            });
+          }
         })
         .catch(err => {
           console.log(err);

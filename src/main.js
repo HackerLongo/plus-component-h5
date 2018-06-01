@@ -1,50 +1,63 @@
 import "./style/tsplus.less";
 import "github-markdown-css";
-import "./util/rem";
 import Vue from "vue";
-import store from "./stores/";
-import router from "./routers/";
-
-import App from "./App";
+import "./util/rem";
 
 import Modal from "./plugins/modal/";
-import imgLazy from "./plugins/imgLazy";
+// // import imgLazy from "./plugins/imgLazy";
 import Message from "./plugins/message/";
-import imgCropper from "./plugins/imgCropper";
+import AsyncImage from "./components/FeedCard/v-async-image.js"; // 存在循环依赖
 
-import Ajax from "./http";
+import imgCropper from "@/plugins/imgCropper";
+// // import Toast from "@/plugins/toast/index.js";
+import lstore from "@/plugins/lstore/index.js";
+
+// import Ajax from "./http"; // 存在循环依赖
 import mixin from "./mixin.js";
-// import directives from "./directives/";
-import * as filters from "./filters.js";
+// import * as filters from "./filters.js"; // 存在循环依赖
 import components from "./components.js";
 
-Vue.mixin(mixin);
+// import store from "./stores/"; // 存在循环依赖
+// import router from "./routers/"; // 存在循环依赖
+// import App from "./App"; // 存在循环依赖
 
-components.forEach(component => {
-  Vue.component(component.name, component);
-});
+// import * as WebIM from "@/vendor/easemob"; // 存在循环依赖
 
-Vue.config.productionTip = false;
+// Vue.mixin(mixin);
 
-Vue.prototype.$http = Ajax;
-Vue.prototype.$Modal = Modal;
-Vue.prototype.$Message = Message;
-Vue.prototype.$MessageBundle = filters.plusMessageFirst;
+// components.forEach(component => {
+//   Vue.component(component.name, component);
+// });
 
-Vue.use(imgLazy);
-Vue.use(imgCropper);
+// Vue.config.productionTip = false;
 
-for (const k in filters) {
-  Vue.filter(k, filters[k]);
-}
+// Vue.prototype.$http = Ajax;
+// Vue.prototype.$Modal = Modal;
+// Vue.prototype.$Message = Message;
+// Vue.prototype.$MessageBundle = filters.plusMessageFirst;
 
-// for (const k in directives) {
-//   Vue.directive(k, directives[k]);
+// // Vue.use(imgLazy);
+// Vue.use(AsyncImage);
+// Vue.use(imgCropper);
+// // Vue.use(Toast);
+// Vue.use(lstore);
+
+// for (const k in filters) {
+//   Vue.filter(k, filters[k]);
 // }
+// if (!window.initUrl) {
+//   window.initUrl = window.location.href.replace(/(\/$)/, "");
+// }
+// // for (const k in directives) {
+// //   Vue.directive(k, directives[k]);
+// // }
 
-/* eslint-disable no-new */
-new Vue({
-  store,
-  router,
-  render: h => h(App)
-}).$mount("#app");
+// /* eslint-disable no-new */
+// new Vue({
+//   store,
+//   router,
+//   render: h => h(App),
+//   created() {
+//     WebIM.openWebIM();
+//   }
+// }).$mount("#app");

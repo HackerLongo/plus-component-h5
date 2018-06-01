@@ -1,5 +1,5 @@
 import axios from "axios";
-import localEvent from "store";
+import localEvent from "@/plugins/lstore/lstore.js";
 import router from "./routers/";
 import Message from "@/plugins/message";
 import { plusMessageAnalyze } from "@/filters";
@@ -10,9 +10,9 @@ import { plusMessageAnalyze } from "@/filters";
 let TOKEN;
 axios.interceptors.request.use(
   config => {
-    TOKEN = (localEvent.get("CURRENTUSER") || {}).token;
+    TOKEN = localEvent.getData("H5_ACCESS_TOKEN");
     if (TOKEN) {
-      config.headers.Authorization = `Bearer ${TOKEN}`;
+      config.headers.Authorization = TOKEN;
     }
     return config;
   },
@@ -43,9 +43,9 @@ axios.interceptors.response.use(
       const { status, data } = error.response;
       switch (status) {
         case 401:
-          localEvent.remove("CURRENTUSER");
+          localEvent.removeData("CURRENTUSER");
           setTimeoutCallback();
-          Message.error(TOKEN ? "登录失效, 请重新登录" : "您还没有登录");
+          Message.error(TOKEN ? "登录失效, 请重新登录" : "你还没有登录");
           break;
         case 500:
           throw new Error("服务器错误");

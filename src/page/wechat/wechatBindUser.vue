@@ -68,7 +68,7 @@
           :disabled="disabled"
           class="m-long-btn m-signin-btn"
           @click="bindUser">
-            <svg v-if="loading" class="m-style-svg m-svg-def rotate">
+            <svg v-if="loading" class="m-style-svg m-svg-def">
               <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#base-loading"></use>
             </svg>
             <span v-else>绑定账号</span>
@@ -80,7 +80,6 @@
 </template>
 
 <script>
-import lstore from "store";
 function strLength(str) {
   let totalLength = 0;
   let i = 0;
@@ -116,7 +115,7 @@ export default {
     }
   },
   created() {
-    this.accessToken = lstore.get("H5_WECHAT_MP_ASTOKEN");
+    this.accessToken = this.$lstore.getData("H5_WECHAT_MP_ASTOKEN");
   },
   methods: {
     onFocus() {
@@ -160,11 +159,12 @@ export default {
         .then(({ data: { token = "", user = {} } = {} }) => {
           this.$store.commit("SAVE_CURRENTUSER", { ...user, token });
           this.$nextTick(() => {
-            this.$router.push(this.$route.query.redirect || "/feed/new");
+            this.$router.push(this.$route.query.redirect || "/feeds?type=hot");
             this.$store.dispatch("GET_UNREAD_COUNT");
+            this.$store.dispatch("GET_NEW_UNREAD_COUNT");
             this.$store.commit("SAVE_USER", user);
-            lstore.remove("H5_WECHAT_MP_OPENID");
-            lstore.remove("H5_WECHAT_MP_ASTOKEN");
+            this.$lstore.removeData("H5_WECHAT_MP_OPENID");
+            this.$lstore.removeData("H5_WECHAT_MP_ASTOKEN");
           });
           this.loading = false;
         })

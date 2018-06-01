@@ -3,13 +3,13 @@ export default {
   data() {
     return {
       scrollable: true,
-      windowScrollTop: 0
+      windowScrollTop: 0,
+      isCurrentView: false
     };
   },
   watch: {
     scrollable(val) {
       const el = document.scrollingElement;
-      console.log(el);
       if (val) {
         document.body.style.top = "";
         document.body.classList.remove("m-pop-open");

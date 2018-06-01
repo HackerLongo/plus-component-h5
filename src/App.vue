@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div id="app" class="wap-wrap">
     <keep-alive>
       <router-view v-if="$route.meta.keepAlive"></router-view>
     </keep-alive>
@@ -16,7 +16,7 @@
       <apply-top />
       <info-tips />
       <choose-tags />
-
+      <chooseGroupCate />
     </div>
   </div>
 </template>
@@ -39,18 +39,23 @@ import CheckIn from "@/page/checkin/CheckIn.vue";
 import Reward from "@/components/reward.vue";
 // 选择标签
 import chooseTags from "@/page/chooseTags.vue";
+//
+import chooseGroupCate from "@/page/chooseGroupCate.vue";
 // 提示性 弹窗
 import infoTips from "@/components/infoTips.vue";
 // 通用置顶弹窗
 import applyTop from "@/components/applyForTop.vue";
 
-import localStore from "store";
-import bus from "@/bus.js";
-
-import { mapActions } from "vuex";
+import { mapActions, mapState } from "vuex";
+// import WebIM from "@/vendor/easemob";
 
 export default {
   name: "app",
+  data() {
+    return {
+      title: "TS+"
+    };
+  },
   components: {
     pswp,
     payfor,
@@ -62,30 +67,29 @@ export default {
     Reward,
     CheckIn,
     PostMenu,
-    chooseTags
+    chooseTags,
+    chooseGroupCate
+  },
+  watch: {
+    $route(val) {
+      const { meta: { title } } = val;
+      title && (this.title = title);
+    },
+    title(val) {
+      val && (document.title = val);
+    }
   },
   methods: {
     ...mapActions(["BOOTSTRAPPERS"])
   },
+  computed: {
+    ...mapState({
+      UID: state => state.CURRENTUSER.id,
+      status: state => state.EASEMOB.status
+    })
+  },
   created() {
     this.BOOTSTRAPPERS();
-  },
-  mounted() {
-    const TOKEN = (localStore.get("CURRENTUSER") || {}).token;
-    if (TOKEN) {
-      bus.$emit("connect-easemob");
-    }
   }
 };
 </script>
-<style lang="less">
-.router-fade-enter-active,
-.router-fade-leave-active {
-  transition: opacity 0.3s;
-}
-
-.router-fade-enter,
-.router-fade-leave-active {
-  opacity: 0;
-}
-</style>

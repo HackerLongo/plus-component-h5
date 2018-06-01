@@ -11,8 +11,10 @@
           </slot>
         </h2>
         <div class="m-payfor-body">
-          <h3 class="m-payfor-amount">{{ amount.toFixed(2) }}</h3>
-          <p>您只需{{ amount.toFixed(2) }}{{ currency_name }}就可查看图片</p>
+          <!-- amount.toFixed(2) -->
+          <h3 class="m-payfor-amount">{{ amount }}</h3>
+          <!-- 你只需要支付*积分就可查看此内容/图片/视频 -->
+          <p>{{ content ||  `你只需要支付${ amount }${ currency_name }就可查看此${ nodeType }` }}</p>
         </div>
         <div class="m-payfor-foot">
           <button class="m-payfor-btn primary" @click="handelOk">{{ confirmText || "购买" }}</button>
@@ -30,12 +32,14 @@ export default {
   data() {
     return {
       node: 0,
+      nodeType: "图片",
       amount: 0,
       show: false,
       scrollTop: 0,
       title: "",
       cancelText: "",
-      confirmText: ""
+      confirmText: "",
+      content: ""
     };
   },
   computed: {
@@ -47,6 +51,7 @@ export default {
     }
   },
   created: function() {
+    window.addEventListener("popstate", this.cancel, false);
     bus.$on("payfor", options => {
       const {
         title,
@@ -56,8 +61,14 @@ export default {
         onOk,
         onCancel,
         node,
-        onSuccess
+        onSuccess,
+        nodeType = "",
+        content = ""
       } = options;
+
+      this.content = content;
+      this.nodeType = nodeType;
+
       node && (this.node = node);
       title && (this.title = title);
       cancelText && (this.cancelText = cancelText);
@@ -68,20 +79,11 @@ export default {
       typeof onCancel === "function" && (this.onCancel = onCancel);
       typeof onSuccess === "function" && (this.onSuccess = onSuccess);
       this.show = true;
+      this.scrollable = false;
     });
   },
-  watch: {
-    show(val) {
-      if (val) {
-        this.scrollTop = document.scrollingElement.scrollTop;
-        document.body.classList.add("m-pop-open");
-        document.body.style.top = -this.scrollTop + "px";
-      } else {
-        document.body.style.top = "";
-        document.body.classList.remove("m-pop-open");
-        document.scrollingElement.scrollTop = this.scrollTop;
-      }
-    }
+  beforeDestroy() {
+    window.removeEventListener("popstate", this.cancel, false);
   },
   methods: {
     onOk() {},
@@ -93,12 +95,11 @@ export default {
         ? this.$http
             .post(`/currency/purchases/${this.node}`)
             .then(({ data }) => {
-              this.cancel();
               this.onSuccess(data);
+              this.cancel();
             })
             .catch(() => {
               this.cancel();
-              this.$Message.error("支付失败!");
             })
         : this.cancel();
     },
@@ -108,10 +109,12 @@ export default {
     },
     call() {
       this.show = true;
+      this.scrollable = false;
     },
     cancel() {
       this.node = null;
       this.show = false;
+      this.scrollable = true;
       this.$nextTick(() => {
         this.title = "";
         this.cancelText = "";
@@ -136,7 +139,7 @@ export default {
   margin: auto;
   padding: 0 50px 50px;
   width: 500px;
-  height: 600px;
+  height: 650px;
   border-radius: 10px;
   background-color: @body-bg;
 }
@@ -165,6 +168,7 @@ export default {
     width: 100%;
     height: 70px;
     line-height: 70px;
+    font-size: 30px;
     border-radius: 6px;
     color: @primary;
     border: 1px solid @primary; /*no*/

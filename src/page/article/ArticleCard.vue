@@ -12,7 +12,7 @@
               </div>
               <div class="m-box-model m-flex-grow1 m-aln-center m-flex-base0 m-head-top-title">资讯详情</div>
               <div class="m-box m-flex-grow1 m-aln-center m-flex-base0 m-justify-end">
-                <svg class='m-style-svg m-svg-def'>
+                <svg v-if="!isWechat" class='m-style-svg m-svg-def'>
                   <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#base-share"></use>
                 </svg>
               </div>
@@ -26,7 +26,7 @@
         <main class="m-lim-width m-box-model m-art-card-main mt90">
           <slot></slot>
         </main>
-        <footer ref="foot" class="m-pos-f m-box m-aln-center m-justify-aro m-bt1 m-art-card-foot">
+        <footer v-if="canOprate" ref="foot" class="m-pos-f m-box m-aln-center m-justify-aro m-bt1 m-art-card-foot">
           <slot name='foot'>
             <a class="m-box-model m-aln-center" @click.prevent="handelLike">
               <svg class='m-style-svg m-svg-def'>
@@ -70,6 +70,35 @@ export default {
     liked: {
       type: Boolean,
       default: false
+    },
+    canOprate: {
+      type: Boolean,
+      default: true
+    }
+  },
+  data() {
+    return {
+      headroom: null,
+      footroom: null
+    };
+  },
+  watch: {
+    canOprate(val) {
+      val &&
+        this.$nextTick(() => {
+          this.footroom
+            ? this.footroom.init()
+            : ((this.footroom = new HeadRoom(this.$refs.foot, {
+                tolerance: 5,
+                offset: 50,
+                classes: {
+                  initial: "headroom-foot",
+                  pinned: "headroom--footShow",
+                  unpinned: "headroom--footHide"
+                }
+              })),
+              this.footroom.init());
+        });
     }
   },
   methods: {
@@ -89,6 +118,11 @@ export default {
       this.$router.go(-1);
     }
   },
+  computed: {
+    isWechat() {
+      return this.$store.state.BROWSER.isWechat;
+    }
+  },
   mounted() {
     this.headroom = new HeadRoom(this.$refs.head, {
       tolerance: 5,
@@ -99,17 +133,22 @@ export default {
         unpinned: "headroom--headHide"
       }
     });
-    this.footroom = new HeadRoom(this.$refs.foot, {
-      tolerance: 5,
-      offset: 50,
-      classes: {
-        initial: "headroom-foot",
-        pinned: "headroom--footShow",
-        unpinned: "headroom--footHide"
-      }
-    });
     this.headroom.init();
-    this.footroom.init();
+
+    this.canOprate &&
+      this.$nextTick(() => {
+        this.footroom = new HeadRoom(this.$refs.foot, {
+          tolerance: 5,
+          offset: 50,
+          classes: {
+            initial: "headroom-foot",
+            pinned: "headroom--footShow",
+            unpinned: "headroom--footHide"
+          }
+        });
+
+        this.footroom.init();
+      });
   }
 };
 </script>

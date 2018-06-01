@@ -1,4 +1,16 @@
 /* margin */
+.mt0 {
+  margin-top: 0 !important;
+}
+.mb0 {
+  margin-bottom: 0 !important;
+}
+.mt10 {
+  margin-top: 10px;
+}
+.mb10 {
+  margin-bottom: 10px;
+}
 .mt90 {
   margin-top: 90px;
 }
@@ -62,9 +74,30 @@
   height: 90px;
   padding: 0 30px;
   font-size: 32px;
+  bottom: initial;
   &-title {
     white-space: nowrap;
     font-size: 36px;
+  }
+  .diy-select {
+    text-align: center;
+    height: 100%;
+  }
+  .diy-select--label:after {
+    display: inline-block;
+    position: initial;
+    color: #ccc;
+  }
+  .diy-select--options {
+    position: fixed;
+    top: 90px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.2);
+    .diy-select--option {
+      background-color: #fff;
+    }
   }
   .m-head-nav {
     height: 100%;
@@ -92,6 +125,22 @@
     }
   }
 }
+
+/* sub nav */
+.m-sub-nav {
+  height: 90px;
+  &-item {
+    .m-text-cut();
+    flex: 1 1 auto;
+    margin: 0 40px;
+    padding: 0 10px;
+    color: @text-color3;
+    border-bottom: 2px solid transparent; /*no*/
+    a {
+      color: inherit;
+    }
+  }
+}
 /* base user avatar */
 .m-avatar-box {
   width: 76px;
@@ -106,6 +155,7 @@
   .m-avatar-img {
     overflow: hidden;
     width: 100%;
+    height: 100%;
     border-radius: 50%;
     object-fit: cover;
   }
@@ -173,6 +223,10 @@
   &-2,
   &-woman {
     background-image: url("../images/pic_default_woman.png");
+  }
+
+  &-group {
+    background-image: url("../images/ico_ts_assistant@2x.png");
   }
 }
 
@@ -381,6 +435,41 @@
 }
 
 /* form */
+
+.m-search-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 10px;
+
+  height: 55px;
+  border-radius: 10px;
+  background-color: #ebebeb;
+
+  color: #999;
+
+  .m-svg-def {
+    width: 24px;
+    height: 24px;
+  }
+
+  form,
+  > input　 {
+    flex: 1 1 auto;
+    padding: 0 10px 0 5px;
+    background-color: transparent;
+    color: @text-color1;
+    font-size: 24px;
+  }
+
+  form input {
+    width: 100%;
+    background-color: inherit;
+    color: inherit;
+  }
+}
+
 .m-form-row {
   display: flex;
   align-items: center;
@@ -390,8 +479,9 @@
   font-size: 28px;
   border-bottom: 1px solid @border-color; /*no*/
   .m-input {
-    padding: 0 30px 0;
+    padding: 0 30px;
     flex-grow: 1;
+    flex-shrink: 1;
     display: flex;
     justify-content: space-between;
     input {
@@ -455,7 +545,7 @@
 .m-pinned-amount-customize {
   font-size: 30px;
   input {
-    line-height: 1;
+    line-height: normal;
     font-size: 28px;
     padding: 0 20px;
   }
@@ -463,20 +553,19 @@
 
 .m-reles {
   &-con {
-    overflow-y: auto;
-    padding: 0 50px 50px;
-    .m-wz-def {
-      width: 100%;
-      font-size: 30px;
-    }
     textarea {
-      overflow: hidden;
+      font-size: 32px;
+      line-height: 1.5;
+
+      overflow: auto;
+      margin-top: 35px;
+      padding: 0 30px;
       background-color: transparent;
       outline: 0;
       border: 0;
-      font-size: inherit;
       resize: none;
       width: 100%;
+      max-height: 100%;
       -webkit-box-sizing: border-box;
       box-sizing: border-box;
       -webkit-appearance: none !important;
@@ -485,11 +574,10 @@
   }
 
   &-body {
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;
+    padding-bottom: 40px;
+    height: 32 * 1.5 * 8px;
     margin-bottom: 35px;
-    margin-top: 35px;
-    height: 300px;
     border-radius: 5px;
   }
 }
@@ -544,6 +632,14 @@
   line-height: 48px;
   font-size: 24px;
   color: @text-color2;
+}
+
+/* 占位图 */
+.m-no-find {
+  background-size: 400px;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-image: url("../images/img_default_search@2x.png");
 }
 .c_59b6d7 {
   color: @primary;

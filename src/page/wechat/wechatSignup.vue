@@ -40,7 +40,7 @@
           :disabled="err||loading"
           class="m-long-btn m-signin-btn"
           @click="signupByWechat">
-            <svg v-if="loading" class="m-style-svg m-svg-def rotate">
+            <svg v-if="loading" class="m-style-svg m-svg-def">
               <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#base-loading"></use>
             </svg>
             <span v-else>提交</span>
@@ -51,7 +51,6 @@
   </transition>
 </template>
 <script>
-import lstore from "store";
 const UNAME_REG = /^[a-zA-Z_\u4E00-\u9FA5\uF900-\uFA2D][a-zA-Z0-9_\u4E00-\u9FA5\uF900-\uFA2D]*$/;
 
 export default {
@@ -135,12 +134,13 @@ export default {
           // 保存用户信息 并跳转
           this.$store.commit("SAVE_CURRENTUSER", { ...user, token });
           this.$nextTick(() => {
-            this.$router.push("/feed/new");
+            this.$router.push("/feeds?type=hot");
             this.$store.dispatch("GET_UNREAD_COUNT");
+            this.$store.dispatch("GET_NEW_UNREAD_COUNT");
             this.$store.commit("SAVE_USER", user);
-            lstore.remove("H5_WECHAT_MP_OPENID");
-            lstore.remove("H5_WECHAT_MP_ASTOKEN");
-            lstore.remove("H5_WECHAT_NICKNAME");
+            this.$lstore.removeData("H5_WECHAT_MP_OPENID");
+            this.$lstore.removeData("H5_WECHAT_MP_ASTOKEN");
+            this.$lstore.removeData("H5_WECHAT_NICKNAME");
           });
         })
         .catch(
@@ -156,8 +156,8 @@ export default {
     }
   },
   created() {
-    this.nickname = lstore.get("H5_WECHAT_NICKNAME") || "";
-    this.accessToken = lstore.get("H5_WECHAT_MP_ASTOKEN") || "";
+    this.nickname = this.$lstore.getData("H5_WECHAT_NICKNAME") || "";
+    this.accessToken = this.$lstore.getData("H5_WECHAT_MP_ASTOKEN") || "";
     this.checkName(this.nickname);
   }
 };

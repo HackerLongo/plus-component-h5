@@ -1,45 +1,54 @@
-// 从 window 上取 高德api
-const AMap = window.AMap;
-const errorFormat = error => {
+/**
+ * 定位
+ */
+function switchError(error) {
+  let message = "未知错误";
   switch (error.code) {
-    case error.TIMEOUT:
-      return "获取定位信息超时，请手动选择城市";
-    case error.POSITION_UNAVAILABLE:
-      return "定位失败，当前位置信息不可用，请稍后重试";
     case error.PERMISSION_DENIED:
-      return "定位失败，系统拒绝了定位请求，请打开GPS定位功能";
+      message = "定位失败，系统拒绝了定位请求";
+      break;
+    case error.POSITION_UNAVAILABLE:
+      message = "定位失败，当前位置信息不可用";
+      break;
+    case error.TIMEOUT:
+      message = "定位超时，请手动选择城市";
+      break;
     case error.UNKNOWN_ERROR:
-      return "定位失败，出现未知错误";
-    default:
-      return error;
+      message = "未知错误";
+      break;
   }
-};
-export default () => {
-  return new Promise((resolve, reject) => {
-    if (AMap) {
-      let MyMap = new AMap.Map("iCenter");
-      MyMap.plugin("AMap.Geolocation", function() {
-        let geolocation = new AMap.Geolocation({
-          // 是否使用高精度定位，默认:true
-          enableHighAccuracy: true,
-          // 超过10秒后停止定位，默认：无穷大
-          timeout: 20000,
-          // 默认为false，设置为true的时候可以调整PC端为优先使用浏览器定位，失败后使用IP定位
-          GeoLocationFirst: true,
-          // 定位结果缓存0毫秒，默认：0
-          maximumAge: 30000,
-          // 自动偏移坐标，偏移后的坐标为高德坐标，默认：true
-          convert: true
+
+  return message;
+}
+
+export default {
+  getCurrentPosition() {
+    return new Promise((resolve, reject) => {
+      const AMap = window.AMap;
+      if (AMap) {
+        /***************************************
+        由于Chrome、IOS10等已不再支持非安全域的浏览器定位请求，为保证定位成功率和精度，请尽快升级你的站点到HTTPS。
+        ***************************************/
+        //加载地图，调用浏览器定位服务
+        const map = new AMap.Map("gd_map");
+        map.plugin("AMap.Geolocation", () => {
+          const geolocation = new AMap.Geolocation({
+            enableHighAccuracy: true, //是否使用高精度定位，默认:true
+            timeout: 10000 //超过10秒后停止定位，默认：无穷大
+          });
+
+          geolocation.getCurrentPosition();
+
+          //返回定位信息
+          AMap.event.addListener(geolocation, "complete", resolve);
+          // 定位失败
+          AMap.event.addListener(geolocation, "error", err => {
+            reject({ message: switchError(err) });
+          });
         });
-        MyMap.addControl(geolocation);
-        geolocation.getCurrentPosition();
-        AMap.event.addListener(geolocation, "complete", resolve); // 返回定位信息
-        AMap.event.addListener(geolocation, "error", data => {
-          reject(errorFormat(data));
-        }); // 返回定位出错信息
-      });
-    } else {
-      reject(new Error("你的浏览器不支持定位"));
-    }
-  });
+      } else {
+        reject(new Error("请配置定位插件"));
+      }
+    });
+  }
 };

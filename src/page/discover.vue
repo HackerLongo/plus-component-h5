@@ -61,7 +61,7 @@ export default {
         ],
         [
           {
-            title: "排行",
+            title: "排行榜",
             icon: "rank",
             path: "/rank",
             new_tips: false,
@@ -72,9 +72,9 @@ export default {
           {
             title: "找人",
             icon: "find",
-            path: "/find",
-            new_tips: true,
-            tips: "500米内有一大波玩家赶来"
+            path: "/find/pop",
+            new_tips: false,
+            tips: ""
           }
         ]
       ]
@@ -82,8 +82,16 @@ export default {
   },
   methods: {
     to(path) {
-      this.$router.push({ path });
+      this.$router.push(path);
     }
   }
 };
 </script>
+
+<style lang="less">
+.p-discover {
+  .entry__item--append {
+    fill: #999;
+  }
+}
+</style>

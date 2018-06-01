@@ -1,17 +1,17 @@
 <template>
   <transition name='pop'>
-    <div v-if='show' class="m-box-model m-pos-f" style="background-color: #f4f5f6">
+    <div @touchmove.prevent v-if='show' class="m-box-model m-pos-f" style="background-color: #f4f5f6">
       <header class="m-box m-aln-center m-head-top m-main m-bb1">
         <div class="m-flex-grow1">
           <svg class="m-style-svg m-svg-def" @click="cancel">
             <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#base-back"></use>
           </svg>
         </div>
-        <div class="m-flex-grow1 m-text-c m-head-top-title">
+        <div class="m-box m-aln-center m-justify-center m-flex-grow1 m-head-top-title">
           <span>打赏</span>
         </div>
-        <div class="m-flex-grow1 m-text-r">
-          <a @click.stop.prevent="resetProps">重置</a>
+        <div class="m-box m-aln-center m-justify-end m-flex-grow1 m-text-r">
+          <button class="m-btn" @click.stop.prevent="resetProps" :disabled="!(amount > 0)">重置</button>
         </div>
       </header>
       <main class="m-box-model m-aln-center m-justify-center">
@@ -25,14 +25,19 @@
                   class="m-pinned-amount-btn"
                   :style="{ width: `${1 / items.length * 100}%` }"
                   :class="{ active: ~~amount === ~~item &&  !customAmount }"
-                  @click="chooseDefaultAmount(item)">{{((~~item) / 100).toFixed(2) }} 元</button>
-
+                  @click="chooseDefaultAmount(item)">{{((~~item) / 100).toFixed(2) }} <!-- 元 --></button>
             </div>
           </div>
           <div class="m-box m-aln-center m-justify-bet m-bb1 m-bt1 m-pinned-row plr20 m-pinned-amount-customize">
             <span>自定义金额</span>
             <div class="m-box m-aln-center">
-              <input type="number" pattern="[0-9]*" v-model="customAmount" placeholder="输入金额" dir="rtl">
+              <input 
+                type="number"
+                class="m-text-r"
+                pattern="[0-9]*"
+                v-model="customAmount"
+                placeholder="输入金额"
+                oninput="value=value.slice(0,8)">
               <span>元</span>
             </div>
           </div>
@@ -42,7 +47,7 @@
           :disabled="disabled || loading"
           class="m-long-btn m-signin-btn"
           @click="handleOk">
-            <svg v-if="loading" class="m-style-svg m-svg-def rotate">
+            <svg v-if="loading" class="m-style-svg m-svg-def">
               <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#base-loading"></use>
             </svg>
             <span v-else>确定</span>
@@ -80,8 +85,25 @@ export default {
     }
   },
   created() {
-    bus.$on("reward", () => {
+    bus.$on("reward:user", userID => {
+      this.rewardType = "user";
       this.open();
+      this.rewardUser = () => {
+        if (this.loading) return;
+        this.loading = true;
+        this.$http
+          .post(`/user/${userID}/new-rewards`, {
+            amount: this.amount
+          })
+          .then(({ data = {} }) => {
+            this.loading = false;
+            this.$Message.success(data);
+            this.$nextTick(this.cancel);
+          })
+          .catch(() => {
+            this.loading = false;
+          });
+      };
     });
     bus.$on("reward:feed", feedID => {
       this.rewardType = "feed";
@@ -103,17 +125,41 @@ export default {
           });
       };
     });
+    bus.$on("reward:groupPost", postID => {
+      this.rewardType = "feed";
+      this.open();
+      this.rewardFeed = () => {
+        if (this.loading) return;
+        this.loading = true;
+        this.$http
+          .post(`/plus-group/group-posts/${postID}/new-rewards`, {
+            amount: this.amount
+          })
+          .then(({ data = {} }) => {
+            this.loading = false;
+            this.$Message.success(data);
+            this.$nextTick(this.cancel);
+          })
+          .catch(() => {
+            this.loading = false;
+          });
+      };
+    });
   },
   methods: {
     rewardFeed() {},
+    rewardUser() {},
     handleOk() {
       this.rewardType === "feed" ? this.rewardFeed() : "";
+      this.rewardType === "user" ? this.rewardUser() : "";
     },
     chooseDefaultAmount(amount) {
       this.customAmount && (this.customAmount = null);
       this.amount = amount;
     },
     resetProps() {
+      this.customAmount = null;
+      // this.amount = this.items[0];
       this.amount = null;
     },
     open() {
@@ -126,6 +172,12 @@ export default {
       this.rewardFeed = noop;
       this.scrollable = true;
     }
+  },
+  mounted() {
+    /**
+     * 默认选择 1.00
+     */
+    // this.resetProps();
   }
 };
 </script>
